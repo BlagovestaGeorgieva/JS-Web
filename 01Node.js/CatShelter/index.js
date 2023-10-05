@@ -1,10 +1,6 @@
 
 const http = require('http');
-const homeHtml = require("./views/home/index");
-const siteCss = require("./content/styles/site.js");
-const addBreedHtml = require("./views/addBreed.js");
-const addCatHtml = require("./views/addCat.js");
-const catTemplate = require("./views/home/catTemplate.js");
+const fs = require('fs/promises');
 const port = 5555;
 
 const cats = [
@@ -34,7 +30,7 @@ const cats = [
     }
 ]
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     const { url } = req;
     console.log(url);
 
@@ -44,11 +40,14 @@ const server = http.createServer((req, res) => {
         const breedPattern = /{{breed}}/g;
         const descriptionPattern = /{{description}}/g;
 
+        const catTemplate = await fs.readFile('./views/home/catTemplate.html', 'utf-8')
         const catHtml = cats.map((cat) => catTemplate.replace(imageUrlPattern, cat.imageUrl)
             .replace(namePattern, cat.name)
             .replace(breedPattern, cat.breed)
-            .replace(descriptionPattern, cat.description));
+            .replace(descriptionPattern, cat.description)).join('');
 
+
+        const homeHtml = await fs.readFile('./views/home/index.html', 'utf-8');
         const homeHtmlTemplate = homeHtml.replace('{{cats}}', catHtml)
         res.writeHead(200, {
             "Content-Type": "text/html",
@@ -57,12 +56,14 @@ const server = http.createServer((req, res) => {
         res.write(homeHtmlTemplate);
 
     } else if (url === '/content/styles/site.css') {
+        const siteCss = await fs.readFile('./content/styles/site.css', 'utf-8');
         res.writeHead(200, {
             "Content-Type": "text/css"
         });
 
         res.write(siteCss)
     } else if (url === '/cats/add-breed') {
+        const addBreedHtml = await fs.readFile('./views/addBreed.html', 'utf-8');
 
         res.writeHead(200, {
             "Content-Type": "text/html",
@@ -70,13 +71,14 @@ const server = http.createServer((req, res) => {
 
         res.write(addBreedHtml);
     } else if (url === '/cats/add-cat') {
+        const addCatHtml = await fs.readFile('./views/addCat.html', 'utf-8');
         res.writeHead(200, {
             "Content-Type": "text/html",
         });
 
         res.write(addCatHtml);
     }
-    
+
     res.end();
 });
 
